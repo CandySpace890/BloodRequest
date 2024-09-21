@@ -65,12 +65,14 @@ const createUser = async (req, res) => {
       return res.status(401).json({ message: "User already exists" });
     }
 
-    const bloodSample = await BloodSampleModel.getSampleByBloodType(blood_group);
+    const bloodSample = await BloodSampleModel.getSampleByBloodType(
+      blood_group
+    );
 
     if (!bloodSample) {
       return res.status(401).json({ message: "invalid blood group" });
     }
-    const blood_sample_id = bloodSample.id
+    const blood_sample_id = bloodSample.id;
     const newUser = await UserModel.createUser({
       email,
       first_name,
