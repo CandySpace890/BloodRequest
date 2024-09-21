@@ -4,8 +4,15 @@ const USER_TABLE = "users";
 
 const UserModel = {
   createUser: async (userData) => {
-    const { email, first_name, last_name, password, dob, blood_group } =
-      userData;
+    const {
+      email,
+      first_name,
+      last_name,
+      password,
+      dob,
+      blood_group,
+      blood_sample_id,
+    } = userData;
 
     const id = Math.floor(Math.random() * 1000000);
     const active = true;
@@ -22,6 +29,7 @@ const UserModel = {
         userType,
         dob,
         blood_group,
+        blood_sample_id,
       },
     };
 
@@ -36,6 +44,7 @@ const UserModel = {
       userType,
       dob,
       blood_group,
+      blood_sample_id,
     };
   },
 

@@ -1,5 +1,6 @@
 const RequestModel = require("../models/requestModel");
 const BloodSampleModel = require("../models/bloodSampleModel");
+const UserModel = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 
 const SECRET_KEY = process.env.SECRET_KEY;
@@ -26,30 +27,34 @@ const createRequest = async (req, res) => {
   const { requestType, units, disease } = req.body;
   const userId = req.user.id;
 
-  //   userId,
-  //   userName,
-  //   disease,
-  //   dob,
-  //   units,
-  //   blood_group,
   try {
     const user = await UserModel.getUserById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    if (req.user.isAdmin) {
+      return res.status(404).json({ message: "admin cannot raise or donate" });
+    }
+    if (requestType != "donations" && requestType != "blood_requests") {
+      return res.status(404).json({ message: "invalid request type" });
+    }
+
+    const userName = `${user.first_name} ${user.last_name}`;
+    const bloodGroup = user.blood_group;
+    const bloodSampleId = user.blood_sample_id;
+    const dob = user.dob;
 
     const newRequest = await RequestModel.createRequest(
       requestType,
-      units,
-      disease,
       userId,
-      user.id,
-      user.first_name + user.last_name,
+      userName,
       disease,
-      user.dob,
+      dob,
       units,
-      user.blood_group
+      bloodGroup,
+      bloodSampleId
     );
+
     return res.status(201).json({
       message: "Approval request created successfully",
       newRequest,
@@ -64,32 +69,35 @@ const createRequest = async (req, res) => {
 
 // Review approval request (approve/reject)
 const reviewRequest = async (req, res) => {
-  const { requestId, status } = req.body;
+  const { requestId, approval_request_status } = req.body;
   const adminId = req.user.id;
 
   if (!req.user.isAdmin) {
     return res.status(403).json({ message: "Only admins can review requests" });
   }
+  if (approval_request_status != "approved" && approval_request_status != "rejected") {
+    return res.status(403).json({ message: "invalid status" });
+  }
 
   try {
     const updatedRequest = await RequestModel.updateRequestStatus(
       requestId,
-      status,
+      approval_request_status,
       adminId
     );
 
     // If the request is approved, update blood samples accordingly
-    if (status === "approved") {
+    if (approval_request_status === "approved") {
       if (updatedRequest.requestType === "donation") {
         await BloodSampleModel.updateSampleUnits(
           updatedRequest.bloodSampleId,
-          1
+          updatedRequest.units
         );
       }
     }
 
     return res.status(200).json({
-      message: `Request ${status} successfully`,
+      message: `Request ${approval_request_status} successfully`,
       updatedRequest,
     });
   } catch (error) {
@@ -106,6 +114,13 @@ const getRequestsByUser = async (req, res) => {
   const userId = req.user.id;
 
   try {
+    console.log("request Type ", requestType);
+    if (!requestType) {
+      return res.status(200).json({
+        is_error: true,
+        message: "request type is mandatory",
+      });
+    }
     const requests = await RequestModel.getRequestsByUser(userId, requestType);
     return res.status(200).json({
       message: "Requests retrieved successfully",
@@ -129,9 +144,17 @@ const getAllRequests = async (req, res) => {
 
   try {
     const requests = await RequestModel.getAllRequests();
+    const usersWithAge = requests.map((user) => {
+      if (user.data) {
+        const dob = parseDate(user.data); // Parse the DOB
+        user.age = calculateAge(dob); // Add the age to the user object
+      }
+      return user;
+    });
+
     return res.status(200).json({
       message: "All requests retrieved successfully",
-      requests,
+      usersWithAge,
     });
   } catch (error) {
     console.error("Error fetching all approval requests:", error);
@@ -164,4 +187,24 @@ module.exports = {
   getRequestsByUser: [authenticateJWT, getRequestsByUser],
   getAllRequests: [authenticateJWT, getAllRequests],
   deleteRequest: [authenticateJWT, deleteRequest],
+};
+
+// Helper function to parse DD-MM-YYYY format into a Date object
+const parseDate = (dobString) => {
+  const [day, month, year] = dobString.split("-").map(Number);
+  return new Date(year, month - 1, day); // Month is 0-indexed in JavaScript Date
+};
+
+// Helper function to calculate age based on date of birth
+const calculateAge = (dob) => {
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+
+  // If the birthday hasn't occurred yet this year, subtract one from the age
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+
+  return age;
 };

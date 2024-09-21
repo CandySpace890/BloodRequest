@@ -3,29 +3,49 @@ const dynamoDb = require("../config/db");
 const REQUEST_TABLE = "approval_requests";
 
 const RequestModel = {
-  createRequest: async (requestType, units, userId) => {
-    const requestId = Math.floor(Math.random() * 1000000);
+  createRequest: async (
+    requestType,
+    userId,
+    userName,
+    disease,
+    dob,
+    units,
+    bloodGroup,
+    bloodSampleId
+  ) => {
+    const requestId = Math.floor(Math.random() * 1000000); // Generate a random request ID
+    console.log("Blood Sample Id:", bloodSampleId);
     const params = {
       TableName: REQUEST_TABLE,
       Item: {
         requestId,
-        units,
         requestType,
-        status: "pending", // Initial status
+        approval_request_status: "pending", // Initial status set to pending
         date: new Date().toISOString(),
         userId,
         userName,
         disease,
         dob,
         units,
-        blood_group,
-        reviewedBy: null, // Reviewed by admin when status changes
+        bloodGroup,
+        bloodSampleId,
+        reviewedBy: null, // This will be set when the request is reviewed by an admin
       },
     };
 
     try {
-      await dynamoDb.put(params).promise();
-      return { requestId, requestType, status: "pending", userId };
+      await dynamoDb.put(params).promise(); // Store the request in the DynamoDB table
+      return {
+        requestId,
+        requestType,
+        approval_request_status: "pending",
+        userId,
+        disease,
+        dob,
+        units,
+        bloodGroup,
+        bloodSampleId,
+      };
     } catch (error) {
       console.error("Unable to create approval request. Error:", error);
       throw new Error("Error creating approval request");
@@ -33,6 +53,7 @@ const RequestModel = {
   },
 
   getRequestsByUser: async (userId, requestType) => {
+    console.log("user id", userId, "reqyest type", requestType);
     const params = {
       TableName: REQUEST_TABLE,
       FilterExpression: "userId = :userId AND requestType = :requestType",
@@ -65,13 +86,19 @@ const RequestModel = {
     }
   },
 
-  updateRequestStatus: async (requestId, status, reviewedBy) => {
+  updateRequestStatus: async (
+    requestId,
+    approval_request_status,
+    reviewedBy
+  ) => {
+    console.log("Request Id", requestId);
     const params = {
       TableName: REQUEST_TABLE,
-      Key: { requestId },
-      UpdateExpression: "SET status = :status, reviewedBy = :reviewedBy",
+      Key: { requestId: Number(requestId) },
+      UpdateExpression:
+        "SET approval_request_status = :approval_request_status, reviewedBy = :reviewedBy",
       ExpressionAttributeValues: {
-        ":status": status,
+        ":approval_request_status": approval_request_status,
         ":reviewedBy": reviewedBy,
       },
       ReturnValues: "ALL_NEW",

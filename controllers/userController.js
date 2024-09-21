@@ -1,3 +1,4 @@
+const BloodSampleModel = require("../models/bloodSampleModel");
 const UserModel = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -35,9 +36,13 @@ const loginUser = async (req, res) => {
       return res.status(403).json({ message: "User account is inactive" });
     }
 
-    const token = jwt.sign({ id: user.id }, process.env.SECRET_KEY, {
-      expiresIn: "24h", // Token expiration time
-    });
+    const token = jwt.sign(
+      { id: user.id, isAdmin: user.userType == "admin" ? true : false },
+      process.env.SECRET_KEY,
+      {
+        expiresIn: "24h", // Token expiration time
+      }
+    );
 
     return res.status(200).json({
       message: "Login successful",
@@ -60,6 +65,12 @@ const createUser = async (req, res) => {
       return res.status(401).json({ message: "User already exists" });
     }
 
+    const bloodSample = await BloodSampleModel.getSampleByBloodType(blood_group);
+
+    if (!bloodSample) {
+      return res.status(401).json({ message: "invalid blood group" });
+    }
+    const blood_sample_id = bloodSample.id
     const newUser = await UserModel.createUser({
       email,
       first_name,
@@ -67,6 +78,7 @@ const createUser = async (req, res) => {
       password,
       dob,
       blood_group,
+      blood_sample_id,
     });
 
     return res.status(201).json({

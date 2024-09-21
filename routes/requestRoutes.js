@@ -12,7 +12,7 @@ const router = express.Router();
 router.post("/createRequest", createRequest);
 router.post("/reviewRequest", reviewRequest);
 router.get("/getAllrequests", getAllRequests);
-router.get("/getRequestsByUser", getRequestsByUser);
+router.get("/getRequestsByUser/:requestType", getRequestsByUser);
 router.post("/deleteRequest", deleteRequest);
 // router.post("/:id/status", changeUserStatus);
 
