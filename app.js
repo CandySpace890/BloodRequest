@@ -20,6 +20,7 @@ app.use("/api/bloodSample", bloodSampleRoutes);
 app.use("/api/approvalRequest", approvalRequestRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/", preflightRoutes); // Use the preflight route
+app.get("/ok",(req,res) => res.json("Hey buddy, server is up and running"));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
