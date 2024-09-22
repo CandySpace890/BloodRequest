@@ -22,7 +22,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/", preflightRoutes); // Use the preflight route
 app.get("/ok",(req,res) => res.json("Hey buddy, server is up and running"));
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 80;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
