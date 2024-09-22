@@ -75,7 +75,10 @@ const reviewRequest = async (req, res) => {
   if (!req.user.isAdmin) {
     return res.status(403).json({ message: "Only admins can review requests" });
   }
-  if (approval_request_status != "approved" && approval_request_status != "rejected") {
+  if (
+    approval_request_status != "approved" &&
+    approval_request_status != "rejected"
+  ) {
     return res.status(403).json({ message: "invalid status" });
   }
 
@@ -114,6 +117,7 @@ const getRequestsByUser = async (req, res) => {
   const userId = req.user.id;
 
   try {
+    const { approval_request_status } = req.query;
     console.log("request Type ", requestType);
     if (!requestType) {
       return res.status(200).json({
@@ -121,7 +125,11 @@ const getRequestsByUser = async (req, res) => {
         message: "request type is mandatory",
       });
     }
-    const requests = await RequestModel.getRequestsByUser(userId, requestType);
+    const requests = await RequestModel.getRequestsByUser(
+      userId,
+      requestType,
+      approval_request_status
+    );
     return res.status(200).json({
       message: "Requests retrieved successfully",
       requests,
@@ -133,7 +141,6 @@ const getRequestsByUser = async (req, res) => {
       .json({ message: "Could not fetch approval requests" });
   }
 };
-
 // Fetch all approval requests (admin only)
 const getAllRequests = async (req, res) => {
   if (!req.user.isAdmin) {
@@ -143,7 +150,21 @@ const getAllRequests = async (req, res) => {
   }
 
   try {
-    const requests = await RequestModel.getAllRequests();
+    // Extract filters from query params
+    const { approval_request_status, requestType } = req.query;
+
+    // Convert approval_request_status to an array (split by commas if multiple statuses are provided)
+    const statusFilter = approval_request_status
+      ? approval_request_status.split(",")
+      : null;
+
+    // Pass filters to the model
+    const requests = await RequestModel.getAllRequests(
+      statusFilter,
+      requestType
+    );
+
+    // Calculate age for users (if applicable)
     const usersWithAge = requests.map((user) => {
       if (user.data) {
         const dob = parseDate(user.data); // Parse the DOB

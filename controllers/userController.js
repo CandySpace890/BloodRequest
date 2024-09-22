@@ -72,6 +72,23 @@ const createUser = async (req, res) => {
     if (!bloodSample) {
       return res.status(401).json({ message: "invalid blood group" });
     }
+
+    if (!email) {
+      return res.status(401).json({ message: "required email id" });
+    }
+    if (!password) {
+      return res.status(401).json({ message: "required password" });
+    }
+    if (!first_name) {
+      return res.status(401).json({ message: "required first name" });
+    }
+    if (!last_name) {
+      return res.status(401).json({ message: "required last name" });
+    }
+    if (!dob) {
+      return res.status(401).json({ message: "required date of birth" });
+    }
+
     const blood_sample_id = bloodSample.id;
     const newUser = await UserModel.createUser({
       email,

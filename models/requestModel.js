@@ -52,8 +52,16 @@ const RequestModel = {
     }
   },
 
-  getRequestsByUser: async (userId, requestType) => {
-    console.log("user id", userId, "reqyest type", requestType);
+  getRequestsByUser: async (userId, requestType, approval_request_status) => {
+    console.log(
+      "user id",
+      userId,
+      "request type",
+      requestType,
+      "approval request status",
+      approval_request_status
+    );
+
     const params = {
       TableName: REQUEST_TABLE,
       FilterExpression: "userId = :userId AND requestType = :requestType",
@@ -62,6 +70,14 @@ const RequestModel = {
         ":requestType": requestType,
       },
     };
+
+    // Add the approval_request_status to the filter if provided
+    if (approval_request_status) {
+      params.FilterExpression +=
+        " AND approval_request_status = :approval_request_status";
+      params.ExpressionAttributeValues[":approval_request_status"] =
+        approval_request_status;
+    }
 
     try {
       const result = await dynamoDb.scan(params).promise();
@@ -72,10 +88,40 @@ const RequestModel = {
     }
   },
 
-  getAllRequests: async () => {
+  getAllRequests: async (statusFilter, requestType) => {
     const params = {
       TableName: REQUEST_TABLE,
     };
+
+    // Build the filter expression based on the provided filters
+    let filterExpressions = [];
+    let expressionAttributeValues = {};
+
+    // Handle the approval_request_status filter (IN query)
+    if (statusFilter && statusFilter.length > 0) {
+      // Dynamically build the filter for the status IN query
+      const statusKeys = statusFilter.map((_, index) => `:status_${index}`);
+      filterExpressions.push(
+        `approval_request_status IN (${statusKeys.join(", ")})`
+      );
+
+      // Add values for each status
+      statusFilter.forEach((status, index) => {
+        expressionAttributeValues[`:status_${index}`] = status;
+      });
+    }
+
+    // Handle the requestType filter (exact match)
+    if (requestType) {
+      filterExpressions.push("requestType = :requestType");
+      expressionAttributeValues[":requestType"] = requestType;
+    }
+
+    // If there are any filters, add them to the params
+    if (filterExpressions.length > 0) {
+      params.FilterExpression = filterExpressions.join(" AND ");
+      params.ExpressionAttributeValues = expressionAttributeValues;
+    }
 
     try {
       const result = await dynamoDb.scan(params).promise();

@@ -40,7 +40,7 @@ const getBloodSampleByType = async (req, res) => {
   const { blood_type } = req.params;
 
   try {
-    const sample = await BloodSampleModel.getSampleByType(blood_type);
+    const sample = await BloodSampleModel.getSampleByBloodType(blood_type);
     if (!sample) {
       return res.status(404).json({ message: "Blood sample not found" });
     }
@@ -83,7 +83,9 @@ const createBloodSample = async (req, res) => {
   const { blood_type, units } = req.body;
 
   try {
-    const existingSample = await BloodSampleModel.getSampleByType(blood_type);
+    const existingSample = await BloodSampleModel.getSampleByBloodType(
+      blood_type
+    );
     if (existingSample) {
       return res.status(400).json({ message: "Blood sample already exists" });
     }

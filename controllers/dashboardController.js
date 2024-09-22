@@ -62,5 +62,5 @@ const getDashboardInfo = async (req, res) => {
 };
 
 module.exports = {
-  getDashboardInfo: [getDashboardInfo],
+  getDashboardInfo: [authenticateJWT, getDashboardInfo],
 };
