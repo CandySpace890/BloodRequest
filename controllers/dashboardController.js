@@ -52,13 +52,16 @@ const getDashboardInfo = async (req, res) => {
     // Send response with status
     res.status(200).json({
       status: 200,
+      message: "Dashboard info retrieved successfully",
+      data:{
+      
       totalRequests,
       approvedRequests,
       rejectedRequests,
       donationRequests,
       bloodRequests,
-      message: "Dashboard info retrieved successfully",
-    });
+     
+    }});
   } catch (error) {
     console.error("Unable to get dashboard info. Error:", error);
     res.status(500).json({
