@@ -125,6 +125,10 @@ const UserModel = {
   getAllUsers: async () => {
     const params = {
       TableName: USER_TABLE,
+      FilterExpression: "userType = :userType",
+      ExpressionAttributeValues: {
+        ":userType": "user",
+      },
     };
 
     try {
