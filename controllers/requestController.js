@@ -10,7 +10,7 @@ const authenticateJWT = (req, res, next) => {
     req.headers.authorization && req.headers.authorization.split(" ")[1];
 
   if (!token) {
-    return res.status(403).json({ message: "Token is missing" });
+    return res.status(403).json({ status: 403, message: "Token is missing" });
   }
 
   try {
@@ -18,7 +18,9 @@ const authenticateJWT = (req, res, next) => {
     req.user = { id: decoded.id, isAdmin: decoded.isAdmin }; // Attach user and role
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    return res
+      .status(401)
+      .json({ status: 401, message: "Invalid or expired token" });
   }
 };
 
@@ -30,13 +32,17 @@ const createRequest = async (req, res) => {
   try {
     const user = await UserModel.getUserById(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ status: 404, message: "User not found" });
     }
     if (req.user.isAdmin) {
-      return res.status(404).json({ message: "admin cannot raise or donate" });
+      return res
+        .status(404)
+        .json({ status: 404, message: "Admin cannot raise or donate" });
     }
     if (requestType != "donations" && requestType != "blood_requests") {
-      return res.status(404).json({ message: "invalid request type" });
+      return res
+        .status(404)
+        .json({ status: 404, message: "Invalid request type" });
     }
 
     const userName = `${user.first_name} ${user.last_name}`;
@@ -56,14 +62,16 @@ const createRequest = async (req, res) => {
     );
 
     return res.status(201).json({
+      status: 201,
       message: "Approval request created successfully",
       newRequest,
     });
   } catch (error) {
     console.error("Error creating approval request:", error);
-    return res
-      .status(500)
-      .json({ message: "Could not create approval request" });
+    return res.status(500).json({
+      status: 500,
+      message: "Could not create approval request",
+    });
   }
 };
 
@@ -73,13 +81,15 @@ const reviewRequest = async (req, res) => {
   const adminId = req.user.id;
 
   if (!req.user.isAdmin) {
-    return res.status(403).json({ message: "Only admins can review requests" });
+    return res
+      .status(403)
+      .json({ status: 403, message: "Only admins can review requests" });
   }
   if (
     approval_request_status != "approved" &&
     approval_request_status != "rejected"
   ) {
-    return res.status(403).json({ message: "invalid status" });
+    return res.status(403).json({ status: 403, message: "Invalid status" });
   }
 
   try {
@@ -100,14 +110,16 @@ const reviewRequest = async (req, res) => {
     }
 
     return res.status(200).json({
+      status: 200,
       message: `Request ${approval_request_status} successfully`,
       updatedRequest,
     });
   } catch (error) {
     console.error("Error reviewing approval request:", error);
-    return res
-      .status(500)
-      .json({ message: "Could not review approval request" });
+    return res.status(500).json({
+      status: 500,
+      message: "Could not review approval request",
+    });
   }
 };
 
@@ -118,11 +130,10 @@ const getRequestsByUser = async (req, res) => {
 
   try {
     const { approval_request_status } = req.query;
-    console.log("request Type ", requestType);
     if (!requestType) {
-      return res.status(200).json({
-        is_error: true,
-        message: "request type is mandatory",
+      return res.status(400).json({
+        status: 400,
+        message: "Request type is mandatory",
       });
     }
     const requests = await RequestModel.getRequestsByUser(
@@ -131,57 +142,58 @@ const getRequestsByUser = async (req, res) => {
       approval_request_status
     );
     return res.status(200).json({
+      status: 200,
       message: "Requests retrieved successfully",
       requests,
     });
   } catch (error) {
     console.error("Error fetching approval requests:", error);
-    return res
-      .status(500)
-      .json({ message: "Could not fetch approval requests" });
+    return res.status(500).json({
+      status: 500,
+      message: "Could not fetch approval requests",
+    });
   }
 };
+
 // Fetch all approval requests (admin only)
 const getAllRequests = async (req, res) => {
   if (!req.user.isAdmin) {
-    return res
-      .status(403)
-      .json({ message: "Only admins can fetch all requests" });
+    return res.status(403).json({
+      status: 403,
+      message: "Only admins can fetch all requests",
+    });
   }
 
   try {
-    // Extract filters from query params
     const { approval_request_status, requestType } = req.query;
-
-    // Convert approval_request_status to an array (split by commas if multiple statuses are provided)
     const statusFilter = approval_request_status
       ? approval_request_status.split(",")
       : null;
 
-    // Pass filters to the model
     const requests = await RequestModel.getAllRequests(
       statusFilter,
       requestType
     );
 
-    // Calculate age for users (if applicable)
     const usersWithAge = requests.map((user) => {
       if (user.data) {
-        const dob = parseDate(user.data); // Parse the DOB
-        user.age = calculateAge(dob); // Add the age to the user object
+        const dob = parseDate(user.data);
+        user.age = calculateAge(dob);
       }
       return user;
     });
 
     return res.status(200).json({
+      status: 200,
       message: "All requests retrieved successfully",
       usersWithAge,
     });
   } catch (error) {
     console.error("Error fetching all approval requests:", error);
-    return res
-      .status(500)
-      .json({ message: "Could not fetch all approval requests" });
+    return res.status(500).json({
+      status: 500,
+      message: "Could not fetch all approval requests",
+    });
   }
 };
 
@@ -192,13 +204,15 @@ const deleteRequest = async (req, res) => {
   try {
     await RequestModel.deleteRequest(requestId);
     return res.status(200).json({
+      status: 200,
       message: "Approval request deleted successfully",
     });
   } catch (error) {
     console.error("Error deleting approval request:", error);
-    return res
-      .status(500)
-      .json({ message: "Could not delete approval request" });
+    return res.status(500).json({
+      status: 500,
+      message: "Could not delete approval request",
+    });
   }
 };
 
@@ -213,7 +227,7 @@ module.exports = {
 // Helper function to parse DD-MM-YYYY format into a Date object
 const parseDate = (dobString) => {
   const [day, month, year] = dobString.split("-").map(Number);
-  return new Date(year, month - 1, day); // Month is 0-indexed in JavaScript Date
+  return new Date(year, month - 1, day);
 };
 
 // Helper function to calculate age based on date of birth
@@ -222,7 +236,6 @@ const calculateAge = (dob) => {
   let age = today.getFullYear() - dob.getFullYear();
   const monthDiff = today.getMonth() - dob.getMonth();
 
-  // If the birthday hasn't occurred yet this year, subtract one from the age
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
     age--;
   }

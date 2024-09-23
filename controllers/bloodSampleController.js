@@ -25,14 +25,37 @@ const getAllBloodSamples = async (req, res) => {
   try {
     const bloodSamples = await BloodSampleModel.getAllSamples();
     return res.status(200).json({
+      status: 200,
       message: "Blood samples retrieved successfully",
       bloodSamples,
     });
   } catch (error) {
     console.error("Error retrieving blood samples:", error);
-    return res
-      .status(500)
-      .json({ message: "Could not retrieve blood samples" });
+    return res.status(500).json({
+      status: 500,
+      message: "Could not retrieve blood samples",
+    });
+  }
+};
+
+const getOnlyBloodSampleNames = async (req, res) => {
+  try {
+    const bloodSamples = await BloodSampleModel.getAllSamples();
+
+    // Extract only blood types as an array of strings
+    const bloodSampleNames = bloodSamples.map((sample) => sample.blood_type);
+
+    return res.status(200).json({
+      status: 200,
+      message: "Blood samples retrieved successfully",
+      bloodSampleNames,
+    });
+  } catch (error) {
+    console.error("Error retrieving blood samples:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Could not retrieve blood samples",
+    });
   }
 };
 
@@ -42,27 +65,34 @@ const getBloodSampleByType = async (req, res) => {
   try {
     const sample = await BloodSampleModel.getSampleByBloodType(blood_type);
     if (!sample) {
-      return res.status(404).json({ message: "Blood sample not found" });
+      return res
+        .status(404)
+        .json({ status: 404, message: "Blood sample not found" });
     }
 
     return res.status(200).json({
+      status: 200,
       message: "Blood sample retrieved successfully",
       sample,
     });
   } catch (error) {
     console.error("Error retrieving blood sample:", error);
-    return res.status(500).json({ message: "Could not retrieve blood sample" });
+    return res.status(500).json({
+      status: 500,
+      message: "Could not retrieve blood sample",
+    });
   }
 };
 
 const updateBloodSampleUnits = async (req, res) => {
-  //   const { blood_type } = req.params;
   const { blood_sample_id, units } = req.body;
 
   try {
     const sample = await BloodSampleModel.getSampleByID(blood_sample_id);
     if (!sample) {
-      return res.status(404).json({ message: "Blood sample not found" });
+      return res
+        .status(404)
+        .json({ status: 404, message: "Blood sample not found" });
     }
 
     const updatedSample = await BloodSampleModel.updateSampleUnits(
@@ -70,12 +100,16 @@ const updateBloodSampleUnits = async (req, res) => {
       units
     );
     return res.status(200).json({
+      status: 200,
       message: "Blood sample updated successfully",
       updatedSample,
     });
   } catch (error) {
     console.error("Error updating blood sample:", error);
-    return res.status(500).json({ message: "Could not update blood sample" });
+    return res.status(500).json({
+      status: 500,
+      message: "Could not update blood sample",
+    });
   }
 };
 
@@ -87,7 +121,9 @@ const createBloodSample = async (req, res) => {
       blood_type
     );
     if (existingSample) {
-      return res.status(400).json({ message: "Blood sample already exists" });
+      return res
+        .status(400)
+        .json({ status: 400, message: "Blood sample already exists" });
     }
 
     const newSample = await BloodSampleModel.createBloodSample(
@@ -95,12 +131,16 @@ const createBloodSample = async (req, res) => {
       units
     );
     return res.status(201).json({
+      status: 201,
       message: "Blood sample created successfully",
       newSample,
     });
   } catch (error) {
     console.error("Error creating blood sample:", error);
-    return res.status(500).json({ message: "Could not create blood sample" });
+    return res.status(500).json({
+      status: 500,
+      message: "Could not create blood sample",
+    });
   }
 };
 
@@ -110,18 +150,22 @@ const deleteBloodSample = async (req, res) => {
   try {
     await BloodSampleModel.deleteBloodSample(blood_sample_id);
     return res.status(200).json({
+      status: 200,
       message: "Blood sample deleted successfully",
     });
   } catch (error) {
     console.error("Error deleting blood sample:", error);
-    return res.status(500).json({ message: "Could not delete blood sample" });
+    return res.status(500).json({
+      status: 500,
+      message: "Could not delete blood sample",
+    });
   }
 };
-
 module.exports = {
   getAllBloodSamples: [authenticateJWT, getAllBloodSamples],
   getBloodSampleByType: [authenticateJWT, getBloodSampleByType],
   updateBloodSampleUnits: [authenticateJWT, updateBloodSampleUnits],
   createBloodSample: [authenticateJWT, createBloodSample],
   deleteBloodSample: [authenticateJWT, deleteBloodSample],
+  getOnlyBloodSampleNames: [getOnlyBloodSampleNames],
 };

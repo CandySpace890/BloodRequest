@@ -5,11 +5,13 @@ const {
   updateBloodSampleUnits,
   createBloodSample,
   deleteBloodSample,
+  getOnlyBloodSampleNames,
 } = require("../controllers/bloodSampleController");
 
 const router = express.Router();
 
 router.get("/getAllBloodSamples", getAllBloodSamples);
+router.get("/getBloodSamples", getOnlyBloodSampleNames);
 router.get("/getBloodSampleByType", getBloodSampleByType);
 router.post("/updateBloodSampleUnits", updateBloodSampleUnits);
 router.post("/createBloodSample", createBloodSample);

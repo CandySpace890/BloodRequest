@@ -9,7 +9,7 @@ const authenticateJWT = (req, res, next) => {
     req.headers.authorization && req.headers.authorization.split(" ")[1];
 
   if (!token) {
-    return res.status(403).json({ message: "Token is missing" });
+    return res.status(403).json({ status: 403, message: "Token is missing" });
   }
 
   try {
@@ -17,7 +17,9 @@ const authenticateJWT = (req, res, next) => {
     req.user = { id: decoded.id }; // Attach user ID to the request object
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    return res
+      .status(401)
+      .json({ status: 401, message: "Invalid or expired token" });
   }
 };
 
@@ -47,17 +49,22 @@ const getDashboardInfo = async (req, res) => {
       (request) => request.requestType === "blood_requests"
     ).length;
 
-    // Send response
+    // Send response with status
     res.status(200).json({
+      status: 200,
       totalRequests,
       approvedRequests,
       rejectedRequests,
       donationRequests,
       bloodRequests,
+      message: "Dashboard info retrieved successfully",
     });
   } catch (error) {
     console.error("Unable to get dashboard info. Error:", error);
-    res.status(500).json({ message: "Error fetching dashboard info" });
+    res.status(500).json({
+      status: 500,
+      message: "Error fetching dashboard info",
+    });
   }
 };
 
