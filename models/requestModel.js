@@ -51,6 +51,24 @@ const RequestModel = {
       throw new Error("Error creating approval request");
     }
   },
+  getRequestById: async (requestID) => {
+    console.log("Request Type ", requestID);
+
+    const params = {
+      TableName: REQUEST_TABLE,
+      Key: {
+        requestId: Number(requestID), // Assuming requestID is the primary key
+      },
+    };
+
+    try {
+      const result = await dynamoDb.get(params).promise(); // Use 'get' instead of 'scan'
+      return result.Item; // get operation returns a single Item, not an array
+    } catch (error) {
+      console.error("Unable to get request. Error:", error);
+      throw new Error("Error retrieving request by ID");
+    }
+  },
 
   getRequestsByUser: async (userId, requestType, approval_request_status) => {
     console.log(

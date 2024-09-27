@@ -85,6 +85,22 @@ const reviewRequest = async (req, res) => {
       .status(403)
       .json({ status: 403, message: "Only admins can review requests" });
   }
+  const request = await RequestModel.getRequestById(requestId);
+
+  console.log("Request", request);
+  if (!request) {
+    return res
+      .status(404)
+      .json({ status: 404, message: "Approval Request not found" });
+  }
+
+  console.log("Request", request);
+  if (request.approval_request_status != "pending") {
+    return res
+      .status(400)
+      .json({ status: 404, message: "request already approved or rejected" });
+  }
+
   if (
     approval_request_status != "approved" &&
     approval_request_status != "rejected"
@@ -99,16 +115,24 @@ const reviewRequest = async (req, res) => {
       adminId
     );
 
+    console.log("approval_request_status", approval_request_status);
     // If the request is approved, update blood samples accordingly
     if (approval_request_status === "approved") {
-      if (updatedRequest.requestType === "donation") {
+      console.log("approval_request_status", approval_request_status);
+      if (request.requestType === "donations") {
         await BloodSampleModel.updateSampleUnits(
-          updatedRequest.bloodSampleId,
-          updatedRequest.units
+          request.bloodSampleId,
+          request.units
+        );
+      }
+      if (request.requestType === "blood_requests") {
+        await BloodSampleModel.updateSampleUnits(
+          request.bloodSampleId,
+          -request.units
         );
       }
     }
-
+    // 514755
     return res.status(200).json({
       status: 200,
       message: `Request ${approval_request_status} successfully`,
